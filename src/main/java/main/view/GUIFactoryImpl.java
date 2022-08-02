@@ -1,27 +1,28 @@
 package main.view;
 
+import java.util.Collection;
+import java.util.List;
 import com.google.common.base.Function;
 
 import javafx.geometry.Insets;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
-import javafx.stage.Screen;
+import javafx.scene.text.Text;
+import javafx.scene.Node;
 import main.util.Pair;
 
 public final class GUIFactoryImpl implements GUIFactory {
 	
-	private Pair<Double, Double> buttonSize;
-	private Insets panelInsets;
-	private double panelSpacing;
-	private Pair<Double, Double> sceneSize;
-	
-	
+	private final Pair<Double, Double> buttonSize;
+	private final Insets panelInsets;
+	private final double panelSpacing;
+	private final Pair<Double, Double> sceneSize;
 
 	private GUIFactoryImpl(final Pair<Double, Double> buttonSize, final Insets panelInsets, final double panelSpacing,
 			final Pair<Double, Double> sceneSize) {
@@ -40,21 +41,29 @@ public final class GUIFactoryImpl implements GUIFactory {
 	}
 
 	@Override
-	public Pane createHorizontalPanel() {
+	public HBox createHorizontalPanel() {
 		final HBox hbox = new HBox();
 		hbox.setPadding(panelInsets);
 		hbox.setSpacing(panelSpacing);
 		return hbox;
 	}
 
-    @Override
-    public Pane createVerticalPanel() {
-        final VBox vbox = new VBox();
-        vbox.setPadding(panelInsets);
-        vbox.setSpacing(panelSpacing);
-        return vbox;
-    }
-	
+	@Override
+	public VBox createVerticalPanel() {
+		final VBox vbox = new VBox();
+		vbox.setPadding(panelInsets);
+		vbox.setSpacing(panelSpacing);
+		return vbox;
+	}
+
+	@Override
+	public Alert createInformationBox(final String message) {
+		final Alert a = new Alert(AlertType.INFORMATION);
+		a.setTitle("Information box");
+		a.setHeaderText("A lovely tip!");
+		a.setContentText(message);
+		return a;
+	}
 
 	@Override
 	public Scene createScene(final Pane panel) {
@@ -62,11 +71,8 @@ public final class GUIFactoryImpl implements GUIFactory {
 	}
 
 	public static class Builder {
-		// these things should be read from configuration file.
+		// these things should be read from configuration file in xml.
 		// i need to settle it better later.
-		// che spachetti code, non ce l'ha faccio piu'
-		//private static final double X = Screen.getPrimary().getBounds().getWidth();
-		//private static final double Y = Screen.getPrimary().getBounds().getHeight();
 		private static final double BUTTONWIDTH = 0.15;
 		private static final double BUTTONHEIGHT = 0.05;
 		private static final double SCENEWIDTH = 0.681;
@@ -75,8 +81,8 @@ public final class GUIFactoryImpl implements GUIFactory {
 		private static final double INSETSY = 0.015;
 		private static final double PANELSPACING = 0.001;
 
-		private Pair<Double, Double> buttonSize = new Pair<>(BUTTONWIDTH, BUTTONHEIGHT);
-		private Pair<Double, Double> sceneSize = new Pair<>(SCENEWIDTH, SCENEHEIGHT);
+		private Pair<Double, Double> buttonSize;
+		private Pair<Double, Double> sceneSize;
 		private Insets panelInsets;
 		private double panelSpacing;
 		private final double x;
@@ -98,21 +104,46 @@ public final class GUIFactoryImpl implements GUIFactory {
 			this.y = y;
 		}
 
+		/**
+		 * Set size for a normal button.
+		 * 
+		 * @param pX percentage to multiply the screen size.
+		 * @param pY percentage to multiply the screen size.
+		 * @return the the object itself.
+		 */
 		public Builder buttonSize(final double pX, final double pY) {
-			this.buttonSize = new Pair<Double, Double>(fx.apply(pX), fy.apply(pY));
+			this.buttonSize = new Pair<>(fx.apply(pX), fy.apply(pY));
 			return this;
 		}
 
+		/**
+		 * Set size for a normal scene.
+		 * 
+		 * @param p percentage to multiply the screen size
+		 * @return the object itself
+		 */
 		public Builder sceneSize(final double p) {
-			this.sceneSize = new Pair<Double, Double>(fx.apply(p), fy.apply(p));
+			this.sceneSize = new Pair<>(fx.apply(p), fy.apply(p));
 			return this;
 		}
 
+		/**
+		 * set size for insets.
+		 * 
+		 * @param p percentage to multiply the screen size.
+		 * @return the object itself
+		 */
 		public Builder panelInsets(final double p) {
 			this.panelInsets = new Insets(fx.apply(p), fy.apply(p), fx.apply(p), fy.apply(p));
 			return this;
 		}
 
+		/**
+		 * set panel spacing size.
+		 * 
+		 * @param p percentage to multiply the screen size.
+		 * @return the object itself
+		 */
 		public Builder panelSpacing(final double p) {
 			final double h = Math.sqrt(x * x + y * y);
 			this.panelSpacing = h * p;
@@ -123,16 +154,30 @@ public final class GUIFactoryImpl implements GUIFactory {
 			return new GUIFactoryImpl(buttonSize, panelInsets, panelSpacing, sceneSize);
 		}
 
-
 	}
 
 	@Override
-	public Alert createInformationBox(final String message) {
-		final Alert a = new Alert(AlertType.INFORMATION);
-		a.setTitle("Information box");
-		a.setHeaderText("A lovely tip!");
-		a.setContentText(message);
-		return a;
+	public ScrollPane createBlockScheda(final String title, final Collection<? extends Node> descriptions,
+			final Collection<? extends Node>... fields) {
+		final ScrollPane scroll = new ScrollPane();
+		scroll.setPadding(new Insets(panelSpacing * 10));
+		final VBox vbox = createVerticalPanel();
+		final HBox titleBox = createHorizontalPanel();
+		titleBox.getChildren().add(new Text(title));
+		final HBox descriptionBox = createHorizontalPanel();
+		descriptionBox.getChildren().addAll(descriptions);
+		final HBox dataBox = createHorizontalPanel();
+
+		final List<Collection<? extends Node>> dataFields = List.of(fields);
+		for (final Collection<? extends Node> field : dataFields) {
+			final VBox v = createVerticalPanel();
+			v.getChildren().addAll(field);
+			dataBox.getChildren().add(v);
+		}
+
+		vbox.getChildren().addAll(titleBox, descriptionBox, dataBox);
+		scroll.setContent(vbox);
+		return scroll;
 	}
 
 }

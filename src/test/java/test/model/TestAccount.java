@@ -17,8 +17,8 @@ public final class TestAccount {
 
 	
 	@Test void testBankOperations() {
-		final Account acc1 = new SimpleAccount(0, "crypto");
-		final Account acc2 = new SimpleAccount(0, "stock");
+		final Account acc1 = new SimpleAccount(0);
+		final Account acc2 = new SimpleAccount(0);
 
 		try {
 			acc1.withdraw(100);

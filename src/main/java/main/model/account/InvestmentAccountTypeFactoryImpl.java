@@ -43,13 +43,13 @@ public class InvestmentAccountTypeFactoryImpl implements InvestmentAccountTypeFa
 			final BiPredicate<E, Double> predicate) {
 		return new InvestmentAccount() {
 
-			private double balance;
+			private Account account = new SimpleAccount(0);
 			private double investedBalance;
 			private E state = initialState;
 
 			@Override
 			public double getBalance() {
-				return this.balance;
+				return account.getBalance();
 			}
 
 			private boolean changeState(final Function<E, E> f) {
@@ -60,7 +60,7 @@ public class InvestmentAccountTypeFactoryImpl implements InvestmentAccountTypeFa
 			@Override
 			public void withdraw(final double amount) {
 				if (canWithdraw(amount)) {
-					this.balance -= amount;
+					this.account.withdraw(amount);
 					chargeOperationFees(amount);
 				} else {
 					throw new NotEnoughFundsException();
@@ -76,7 +76,7 @@ public class InvestmentAccountTypeFactoryImpl implements InvestmentAccountTypeFa
 			@Override
 			public void deposit(final double amount) {
 				if (canDeposit(amount)) {
-					this.balance += amount;
+					this.account.deposit(amount);
 					chargeOperationFees(amount);
 				} else {
 					throw new IllegalStateException();
@@ -84,7 +84,7 @@ public class InvestmentAccountTypeFactoryImpl implements InvestmentAccountTypeFa
 			}
 
 			private void chargeOperationFees(final double amount) {
-				this.balance -= operationFee.apply(amount);
+				this.account.withdraw(operationFee.apply(amount));
 			}
 
 			private boolean canDeposit(final double amount) {
